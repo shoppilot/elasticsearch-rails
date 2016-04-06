@@ -57,8 +57,12 @@ module Elasticsearch
         #
         #     Article.document_type "my-article"
         #
-        def document_type name=nil
-          @document_type = name || @document_type || implicit(:document_type)
+        def document_type name=nil, &block
+          type = @document_type = name || @document_type || implicit(:document_type)
+          if block_given?
+            type.define_singleton_method(:call, &block.method(:call))
+          end
+          type
         end
 
 
@@ -129,7 +133,12 @@ module Elasticsearch
         #     @article.__elasticsearch__.update_document
         #
         def document_type name=nil
-          @document_type = name || @document_type || self.class.document_type
+          type = @document_type = name || @document_type || self.class.document_type
+          if type.respond_to?(:call)
+            type.call(target)
+          else
+            type
+          end
         end
 
         # Set the document type
